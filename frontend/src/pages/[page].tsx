@@ -33,18 +33,23 @@ const DynamicPage: React.FC = () => {
   // Generate website
   const handleGenerate = async (prompt: string) => {
     setLoading(true);
-    const newPages = await generateWebsite(prompt);
-    // Normalize page names and HTML
-    const normalizedPages: Pages = {};
-    Object.entries(newPages).forEach(([key, value]) => {
-      const normKey = normalizePageName(String(key));
-      normalizedPages[normKey] = normalizeHtmlLinks(String(value));
-    });
-    setPages(normalizedPages);
-    const firstPage = Object.keys(normalizedPages)[0];
-    setSelected(firstPage);
-    router.push(`/${firstPage}`);
-    setLoading(false);
+    try {
+      const newPages = await generateWebsite(prompt);
+      // Normalize page names and HTML
+      const normalizedPages: Pages = {};
+      Object.entries(newPages).forEach(([key, value]) => {
+        const normKey = normalizePageName(String(key));
+        normalizedPages[normKey] = normalizeHtmlLinks(String(value));
+      });
+      setPages(normalizedPages);
+      const firstPage = Object.keys(normalizedPages)[0];
+      setSelected(firstPage);
+      router.push(`/${firstPage}`);
+    } catch (error) {
+      console.error("Failed to generate website:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Load pages on mount
@@ -60,19 +65,13 @@ const DynamicPage: React.FC = () => {
     });
   }, []);
 
-  // Sync selected page with URL
+  // Sync selected page with URL - only when page query changes
   useEffect(() => {
     if (page && typeof page === "string") {
-      setSelected(page);
+      const normalizedPage = normalizePageName(page);
+      setSelected(normalizedPage);
     }
   }, [page]);
-
-  // Change URL when selected changes
-  useEffect(() => {
-    if (selected && selected !== page) {
-      router.replace(`/${selected}`);
-    }
-  }, [selected]);
 
   // Load preview when selected changes
   useEffect(() => {
@@ -125,16 +124,23 @@ const DynamicPage: React.FC = () => {
       setPreviewHtml(normalizeHtmlLinks(payload));
     } else if (selector === 'navigate') {
       const pageNames = Object.keys(pages);
-      const normalizedPayload = normalizePageName(payload);
+      // Normalize both payload and page names for robust matching
+      const normalizedPayload = normalizePageName(payload).replace(/\s+/g, '').toLowerCase();
       const target = pageNames.find(
-        p => p.toLowerCase() === normalizedPayload.toLowerCase()
+        p => normalizePageName(p).replace(/\s+/g, '').toLowerCase() === normalizedPayload
       );
       if (target) {
         setSelected(target);
         setPreviewHtml(pages[target]);
-        router.push(`/${target}`);
+        router.push(`/${target}`); // Always update the route
       }
     }
+  };
+
+  // Handle page selection from sidebar
+  const handlePageSelect = (pageName: string) => {
+    setSelected(pageName);
+    router.push(`/${pageName}`);
   };
 
   return (
@@ -145,7 +151,7 @@ const DynamicPage: React.FC = () => {
         <PageList
           pages={Object.keys(pages)}
           selected={selected}
-          onSelect={setSelected}
+          onSelect={handlePageSelect}
         />
       </div>
       <div className="main-content">

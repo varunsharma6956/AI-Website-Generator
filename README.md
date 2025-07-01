@@ -25,11 +25,11 @@ Code Walkthrough: Step by Step --
 
 Frontend
 -----------
-1) PromptInput.tsx: Input for website description, triggers generation.
-2) PageList.tsx: Sidebar list of pages, click to select.
-3) PreviewPane.tsx: Shows HTML preview in iframe, rewrites internal links, handles WYSIWYG editing and navigation.
-4) Editor.tsx: Full HTML editor for advanced editing.
-5) index.tsx/[page].tsx: Main logic for state, API calls, page selection, AI edits, and handling navigation events from the preview.
+1) PromptInput.tsx: Handles user input for website description and triggers generation.
+2) PageList.tsx: Renders the sidebar with all page names; clicking updates the selected page.
+3) PreviewPane.tsx: Shows the HTML of the selected page in an iframe; rewrites internal links to trigger navigation in the main app.
+4) [page].tsx: Main logic for state, API calls, page selection, AI edits, and handling navigation events from the preview.
+5) Editor.tsx: (Bonus) Full HTML editor for advanced editing.
 
 
 
