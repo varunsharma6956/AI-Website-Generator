@@ -17,6 +17,30 @@ A powerful AI-powered website generator that creates beautiful, modern websites 
 - **WYSIWYG Editing**: Double-click text elements to edit them directly
 - **Real-time Updates**: Changes reflect immediately in the preview
 
+
+
+
+Code Walkthrough: Step by Step --
+----------------------------------------
+
+Frontend
+-----------
+1) PromptInput.tsx: Input for website description, triggers generation.
+2) PageList.tsx: Sidebar list of pages, click to select.
+3) PreviewPane.tsx: Shows HTML preview in iframe, rewrites internal links, handles WYSIWYG editing and navigation.
+4) Editor.tsx: Full HTML editor for advanced editing.
+5) index.tsx/[page].tsx: Main logic for state, API calls, page selection, AI edits, and handling navigation events from the preview.
+
+
+
+Backend
+---------------
+main.py: FastAPI endpoints for /generate, /pages, /page/{page_name}, /edit.
+ai.py: Handles OpenAI prompt engineering for both generation and AI-powered edits.
+models.py: Pydantic models for request/response validation.
+requirements.txt: All dependencies listed.
+
+
 ## 🏗️ Architecture
 
 ```
