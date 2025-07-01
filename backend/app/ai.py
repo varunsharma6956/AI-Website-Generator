@@ -1,11 +1,16 @@
 import os
 from dotenv import load_dotenv
 import openai
+import google.generativeai as genai
 import json
 import re
 
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai_api_key = os.getenv("OPENAI_API_KEY")
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+# Use new OpenAI client
+openai_client = openai.OpenAI(api_key=openai_api_key)
 
 def extract_json(text):
     # Try to find the first {...} block
@@ -37,14 +42,12 @@ def generate_website(prompt: str) -> dict:
         "Respond ONLY with JSON like this: {\"Home\": \"<html>...</html>\", \"About\": \"<html>...</html>\"}. "
         "Do NOT use markdown, code blocks, or filenames. Only pure JSON."
     )
-    response = openai.chat.completions.create(
+    response = openai_client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
-        ],
-        max_tokens=2000,
-        temperature=0.7
+        ]
     )
     content = response.choices[0].message.content
     try:
@@ -71,14 +74,12 @@ def edit_page_with_ai(page: str, html: str, edit_prompt: str) -> str:
         f"Current HTML:\n{html}\n"
         "Return only the full updated HTML. Do NOT use markdown, code blocks, or filenames. Only pure HTML."
     )
-    response = openai.chat.completions.create(
+    response = openai_client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
-        ],
-        max_tokens=1500,
-        temperature=0.7
+        ]
     )
     result = sanitize_html(response.choices[0].message.content.strip())
     if not result or len(result) < 20:

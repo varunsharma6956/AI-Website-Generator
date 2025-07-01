@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import PromptInput from "../components/PromptInput";
 import PageList from "../components/PageList";
 import PreviewPane from "../components/PreviewPane";
 import Editor from "../components/Editor";
 import { generateWebsite, getPages, getPage, editPage } from "../utils/api";
-import { useRouter } from "next/router";
 
 type Pages = { [key: string]: string };
 
@@ -18,7 +18,9 @@ function normalizeHtmlLinks(html: string): string {
   return html.replace(/href=\"([A-Za-z0-9]+)\.html\"/g, 'href="/$1"');
 }
 
-const Home: React.FC = () => {
+const DynamicPage: React.FC = () => {
+  const router = useRouter();
+  const { page } = router.query;
   const [pages, setPages] = useState<Pages>({});
   const [selected, setSelected] = useState<string>("");
   const [previewHtml, setPreviewHtml] = useState<string>("");
@@ -27,7 +29,6 @@ const Home: React.FC = () => {
   const [editHtml, setEditHtml] = useState("");
   const [aiEditPrompt, setAiEditPrompt] = useState("");
   const [aiEditLoading, setAiEditLoading] = useState(false);
-  const router = useRouter();
 
   // Generate website
   const handleGenerate = async (prompt: string) => {
@@ -42,6 +43,7 @@ const Home: React.FC = () => {
     setPages(normalizedPages);
     const firstPage = Object.keys(normalizedPages)[0];
     setSelected(firstPage);
+    router.push(`/${firstPage}`);
     setLoading(false);
   };
 
@@ -57,6 +59,20 @@ const Home: React.FC = () => {
       setPages(normalizedPages);
     });
   }, []);
+
+  // Sync selected page with URL
+  useEffect(() => {
+    if (page && typeof page === "string") {
+      setSelected(page);
+    }
+  }, [page]);
+
+  // Change URL when selected changes
+  useEffect(() => {
+    if (selected && selected !== page) {
+      router.replace(`/${selected}`);
+    }
+  }, [selected]);
 
   // Load preview when selected changes
   useEffect(() => {
@@ -86,13 +102,10 @@ const Home: React.FC = () => {
     const pageNames = Object.keys(pages);
     let updatedPages = { ...pages };
     let pagesToEdit: string[] = [];
-    // Detect if prompt is for all pages
     if (promptLower.includes('all pages')) {
       pagesToEdit = pageNames;
     } else {
-      // Find all page names mentioned in the prompt
       pagesToEdit = pageNames.filter(p => promptLower.includes(p.toLowerCase()));
-      // If none found, default to selected page
       if (pagesToEdit.length === 0) pagesToEdit = [selected];
     }
     for (const page of pagesToEdit) {
@@ -119,18 +132,10 @@ const Home: React.FC = () => {
       if (target) {
         setSelected(target);
         setPreviewHtml(pages[target]);
+        router.push(`/${target}`);
       }
     }
   };
-
-  useEffect(() => {
-    getPages().then(pages => {
-      const keys = Object.keys(pages);
-      if (keys.length > 0) {
-        router.replace(`/${keys[0]}`);
-      }
-    });
-  }, []);
 
   return (
     <div className="app-container">
@@ -177,4 +182,4 @@ const Home: React.FC = () => {
   );
 };
 
-export default Home;
+export default DynamicPage; 

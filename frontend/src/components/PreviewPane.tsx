@@ -6,6 +6,20 @@ type Props = {
   editableSelector?: string;
 };
 
+function rewriteLinks(html: string) {
+  // Replace <a href="About.html"> or <a href="/About.html"> or <a href="About"> or <a href="/About"> with <a href="#" data-target="About">
+  html = html.replace(/<a\s+href=["']\/?([A-Za-z0-9_-]+)(?:\.html)?["']/gi, (match, p1) => {
+    return `<a href="#" data-target="${p1}"`;
+  });
+  // Replace <button ... onclick="location.href='About.html'"> or <button ... onclick="location.href='About'">
+  html = html.replace(/<button([^>]*)onclick=["']location\.href=['"]\/?([A-Za-z0-9_-]+)(?:\.html)?['"][^>]*>/gi, (match, attrs, p1) => {
+    return `<button${attrs} data-target="${p1}">`;
+  });
+  // Remove all inline onclicks that navigate to .html or plain page
+  html = html.replace(/onclick=["']location\.href=['"][^'"]+(?:\.html)?['"]["']/gi, '');
+  return html;
+}
+
 const PreviewPane: React.FC<Props> = ({ html, onElementClick, editableSelector }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -15,22 +29,18 @@ const PreviewPane: React.FC<Props> = ({ html, onElementClick, editableSelector }
     const handleLoad = () => {
       const doc = iframe.contentDocument || iframe.contentWindow?.document;
       if (doc) {
-        // Prevent all link navigation
-        const links = doc.querySelectorAll("a");
-        links.forEach(link => {
-          link.addEventListener("click", (e) => {
-            const href = (link as HTMLAnchorElement).getAttribute('href');
-            if (href && (href.endsWith('.html') || href.startsWith('/'))) {
-              e.preventDefault();
-              // Extract page name (e.g., about.html -> About)
-              let pageName = href.replace('.html', '').replace('/', '');
-              pageName = pageName.charAt(0).toUpperCase() + pageName.slice(1);
-              window.parent.postMessage({ type: 'navigate-page', page: pageName }, '*');
-              return;
-            }
+        // Global click interception for all data-target elements
+        doc.addEventListener('click', (e) => {
+          const target = e.target as HTMLElement;
+          if (target && target.hasAttribute('data-target')) {
             e.preventDefault();
-          });
-        });
+            e.stopPropagation();
+            const page = target.getAttribute('data-target');
+            if (page) {
+              window.parent.postMessage({ type: 'navigate-page', page }, '*');
+            }
+          }
+        }, true); // Use capture phase
         // Intercept form submissions
         const forms = doc.querySelectorAll('form');
         forms.forEach(form => {
@@ -100,11 +110,15 @@ const PreviewPane: React.FC<Props> = ({ html, onElementClick, editableSelector }
     }
   };
 
+  // Rewrite links before passing to iframe
+  const rewrittenHtml = rewriteLinks(html);
+
   return (
     <div className="preview-pane" onClick={handleClick}>
       <iframe
         ref={iframeRef}
-        srcDoc={html}
+        srcDoc={rewrittenHtml}
+        key={rewrittenHtml}
         style={{
           width: "100%",
           height: "100%",

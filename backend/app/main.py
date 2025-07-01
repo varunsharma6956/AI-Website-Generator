@@ -29,6 +29,9 @@ def get_pages():
 
 @app.get("/page/{page_name}")
 def get_page(page_name: str):
+    # Strip .html if present
+    if page_name.lower().endswith('.html'):
+        page_name = page_name[:-5]
     pages = websites.get("current", {})
     html = pages.get(page_name)
     if not html:
