@@ -35,10 +35,10 @@ Frontend
 
 Backend
 ---------------
-main.py: FastAPI endpoints for /generate, /pages, /page/{page_name}, /edit.
-ai.py: Handles OpenAI prompt engineering for both generation and AI-powered edits.
-models.py: Pydantic models for request/response validation.
-requirements.txt: All dependencies listed.
+1) main.py: FastAPI endpoints for /generate, /pages, /page/{page_name}, /edit.
+2) ai.py: Handles OpenAI prompt engineering for both generation and AI-powered edits.
+3) models.py: Pydantic models for request/response validation.
+4) requirements.txt: All dependencies listed.
 
 
 ## 🏗️ Architecture
